@@ -7,10 +7,7 @@
     --muted: #a0a0a0;
     --danger: #ff6b6b;
     --success: #66d29b;
-
     --text-weak: #cfcfcf;
-
-
     --card-width-min: 90px;
     --card-width-vw: 20vw;
     --card-width-max: 130px;
@@ -184,7 +181,6 @@ select,
 input {
     font-family: 'Stack Sans Headline', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
-
 
 button {
     appearance: none;
