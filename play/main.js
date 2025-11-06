@@ -147,8 +147,8 @@
 
     const STRAT_DESCRIPTIONS = {
         random: 'Randomly bets, checks, calls, and folds without considering card strength.',
-        safe: 'Very conservative: bets/reraises only with strong cards; folds most marginal hands.',
-        risky: 'Aggressive: frequently bets/reraises, even with weak cards; calls more often.',
+        safe: 'Very conservative: bets/raises only with strong cards; folds most marginal hands.',
+        risky: 'Aggressive: frequently bets/raises, even with weak cards; calls more often.',
         smart: 'Equilibrium-like: uses EV thresholds to value-bet strong hands and bluff just enough.',
     };
     const STRAT_LABELS = { random: 'Random', safe: 'Safe', risky: 'Risky', smart: 'Smart' };
@@ -477,25 +477,24 @@
         if (!hand) {
             els.dealBtn.textContent = 'Deal New Game';
             showActionButtons(['dealBtn']);
-            els.betBtn.textContent = 'Reraise';
+            els.betBtn.textContent = 'Raise';
             return;
         }
         if (hand.street === 'terminal') {
             els.dealBtn.textContent = 'Deal New Hand';
             showActionButtons(['dealBtn']);
-            els.betBtn.textContent = 'Reraise';
+            els.betBtn.textContent = 'Raise';
             return;
         }
 
         if (hand.street === 'decision') {
             if (hand.awaiting === 'player-response-to-bot-bet') {
-
+                
                 showActionButtons(['betBtn', 'foldBtn']);
-                els.betBtn.textContent = 'Reraise';
+                els.betBtn.textContent = 'Call';
             } else {
-
                 showActionButtons(['betBtn', 'checkBtn', 'foldBtn']);
-                els.betBtn.textContent = 'Reraise';
+                els.betBtn.textContent = 'Raise';
             }
             return;
         }
@@ -506,33 +505,25 @@
         if (!hand || hand.street !== 'decision') return;
         const { P, b } = params();
 
-        match.stats.you.reraise += 1;
         if (hand.awaiting === 'player-response-to-bot-bet') {
-
-            log(`You reraise ${money(b)}.`);
+            log('You call.');
             hand.pot += b; match.yourStack -= b; hand.youContrib += b;
-            setButtonsDisabled(true);
-            await sleep(TIMINGS.ROBOT_THINK_MS);
-            log(`Robot matches ${money(b)}.`);
-            hand.pot += b; match.botStack -= b; hand.botContrib += b;
-            match.stats.bot.calls += 1;
-            setButtonsDisabled(false);
+            match.stats.you.calls += 1;
             revealAndSettle();
             return;
         }
 
-        log(`You reraise ${money(b)}.`);
+        match.stats.you.reraise += 1;
+        log(`You raise ${money(b)}.`);
         hand.pot += b; match.yourStack -= b; hand.youContrib += b;
         if (hand.botDecision === 'bet') {
-
             setButtonsDisabled(true);
             await sleep(TIMINGS.ROBOT_THINK_MS);
-            log(`Robot also reraises ${money(b)}.`);
+            log(`Robot also raises ${money(b)}.`);
             hand.pot += b; match.botStack -= b; hand.botContrib += b;
             setButtonsDisabled(false);
             revealAndSettle();
         } else {
-
             setButtonsDisabled(true);
             await sleep(TIMINGS.ROBOT_THINK_MS);
             const decision = robotPolicy_facingBet_decideCall(hand.bot, P, b, els.strategy.value);
@@ -558,7 +549,9 @@
             log('You check.');
             setButtonsDisabled(true);
             await sleep(TIMINGS.ROBOT_THINK_MS);
-            log(`Robot reraises ${money(b)}. You must Reraise or Fold.`);
+            log(`Robot raises ${money(b)}. You must Call or Fold.`);
+            // Apply the robot's raise to the pot immediately
+            hand.pot += b; match.botStack -= b; hand.botContrib += b;
             hand.awaiting = 'player-response-to-bot-bet';
             setButtonsDisabled(false);
             nextAction();
@@ -618,7 +611,7 @@
             await flipRevealCard(els.yourCard, fmtCard(you, hand.deck), 250);
             setButtonsDisabled(false);
             clearLog();
-            log('Cards dealt. Both players ante. Choose Reraise, Check, or Fold.');
+            log('Cards dealt. Both players ante. Choose Raise, Check, or Fold.');
             nextAction();
         }
     });
@@ -779,4 +772,8 @@
 
     setCardBack(els.yourCard);
     setCardBack(els.botCard);
+    
+    if (els.tutorialDialog) {
+        try { els.tutorialDialog.showModal(); } catch (e) { }
+    }
 })();
