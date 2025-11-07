@@ -16,6 +16,26 @@
     --card-face-font-max: 4.2rem;
 }
 
+
+@media (min-width: 681px) {
+    :root {
+        --card-width-min: 108px;      
+        --card-width-vw: 24vw;        
+        --card-width-max: 156px;      
+        --card-face-font-min: 3.12rem;
+        --card-face-font-vw: 11.4vw;  
+        --card-face-font-max: 5.04rem;
+    }
+
+    .container {
+        max-width: 1176px;
+    }
+
+    .table {
+        width: min(100%, 984px);
+    }
+}
+
 * {
     box-sizing: border-box;
 }
@@ -47,23 +67,23 @@ body {
 
 .brand .subtitle {
     margin: 0;
-    color: var(--muted);
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
+        --card-width-min: 194px;      
+        --card-width-vw: 43.2vw;      
+        --card-width-max: 281px;      
+        --card-face-font-min: 5.616rem;
+        --card-face-font-vw: 20.52vw;  
+        --card-face-font-max: 9.072rem;
     gap: 0.5rem;
 }
 
 .ghost {
-    background: #ffffff;
+        max-width: 2118px;
     border: 1px solid rgba(0, 0, 0, 0.15);
     color: #111;
 }
 
 .ghost:hover {
-    background: #f2f2f2;
+        width: min(100%, 1772px);
 }
 
 #openSettingsBtn.ghost,
