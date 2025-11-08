@@ -58,19 +58,24 @@
     let hand = null;
 
     function rng() { return Math.random(); }
+    function deckSize(deck) {
+        if (deck === 'akq') return 3;
+        if (deck === 'single') return 13; 
+        const n = parseInt(deck, 10);
+        return Number.isFinite(n) ? n : 0;
+    }
+
     function drawCard() {
         const deck = els.deck.value;
-
-        const N = deck === 'akq' ? 3 : parseInt(deck, 10);
+        const N = deckSize(deck);
         const k = Math.floor(rng() * N);
-        return N === 1 ? 0 : k / (N - 1);
+        return N <= 1 ? 0 : k / (N - 1);
     }
 
     function dealTwoCards() {
         const deck = els.deck.value;
-        const N = deck === 'akq' ? 3 : parseInt(deck, 10);
+        const N = deckSize(deck);
         if (!Number.isFinite(N) || N <= 1) {
-
             let a = rng();
             let b = rng();
             while (b === a) b = rng();
@@ -87,11 +92,16 @@
     function fmtCard(x, deckOverride) {
         const deck = deckOverride ?? els.deck.value;
         if (deck === 'akq') {
-
             const idx = Math.round(x * 2);
             return ['Q', 'K', 'A'][idx] || '?';
         }
-
+        if (deck === 'single') {
+            const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+            const clamped = Math.min(1, Math.max(0, x));
+            const idx = Math.round(clamped * (ranks.length - 1));
+            const card = ranks[idx];
+            return card;
+        }
         const N = parseInt(deck, 10);
         if (!Number.isFinite(N) || N < 1) return '?';
         const idx = Math.round(x * (N - 1));
@@ -364,6 +374,7 @@
             revealed: false,
             allowRaiseAfterBotDeals: false,
             deck: els.deck.value,
+            tempStats: { you: { reraise:0, checks:0, folds:0, calls:0 }, bot: { reraise:0, checks:0, folds:0, calls:0 } },
 
             youContrib: ante,
             botContrib: ante,
@@ -393,7 +404,16 @@
         await sleep(TIMINGS.PRE_SHOWDOWN_MS);
         log(`Showdown: Your ${fmtCard(hand.you, hand.deck)} vs Robot ${fmtCard(hand.bot, hand.deck)} — ${youWin ? 'You win' : 'Robot wins'} ${money(pot)}.`);
         await sleep(TIMINGS.POST_SHOWDOWN_MS);
-        if (youWin) { match.yourStack += pot; match.stats.you.wins += 1; } else { match.botStack += pot; match.stats.bot.wins += 1; }
+        if (youWin) { match.yourStack += pot; } else { match.botStack += pot; }
+        
+        if (hand.tempStats) {
+            for (const k of ['reraise','checks','folds','calls']) {
+                match.stats.you[k] += hand.tempStats.you[k];
+                match.stats.bot[k] += hand.tempStats.bot[k];
+            }
+        }
+        
+        if (youWin) match.stats.you.wins += 1; else match.stats.bot.wins += 1;
         hand.street = 'terminal';
         match.completed += 1;
 
@@ -420,7 +440,14 @@
         await flipRevealCard(els.botCard, fmtCard(hand.bot, hand.deck));
         if (extraMsg) log(extraMsg);
         await sleep(TIMINGS.POST_SHOWDOWN_MS);
-        if (winner === 'you') { match.yourStack += pot; match.stats.you.wins += 1; } else { match.botStack += pot; match.stats.bot.wins += 1; }
+        if (winner === 'you') { match.yourStack += pot; } else { match.botStack += pot; }
+        if (hand.tempStats) {
+            for (const k of ['reraise','checks','folds','calls']) {
+                match.stats.you[k] += hand.tempStats.you[k];
+                match.stats.bot[k] += hand.tempStats.bot[k];
+            }
+        }
+        if (winner === 'you') match.stats.you.wins += 1; else match.stats.bot.wins += 1;
         hand.street = 'terminal';
         match.completed += 1;
 
@@ -508,12 +535,12 @@
         if (hand.awaiting === 'player-response-to-bot-bet') {
             log('You call.');
             hand.pot += b; match.yourStack -= b; hand.youContrib += b;
-            match.stats.you.calls += 1;
+            hand.tempStats.you.calls += 1;
             revealAndSettle();
             return;
         }
 
-        match.stats.you.reraise += 1;
+        hand.tempStats.you.reraise += 1;
         log(`You raise ${money(b)}.`);
         hand.pot += b; match.yourStack -= b; hand.youContrib += b;
         if (hand.botDecision === 'bet') {
@@ -530,12 +557,12 @@
             if (decision === 'call') {
                 log(`Robot matches ${money(b)}.`);
                 hand.pot += b; match.botStack -= b; hand.botContrib += b;
-                match.stats.bot.calls += 1;
+                hand.tempStats.bot.calls += 1;
                 setButtonsDisabled(false);
                 revealAndSettle();
             } else {
                 setButtonsDisabled(false);
-                match.stats.bot.folds += 1;
+                hand.tempStats.bot.folds += 1;
                 settleWinner('you', 'Robot folds. You win by forfeit.');
             }
         }
@@ -544,7 +571,7 @@
     els.checkBtn.addEventListener('click', async () => {
         if (!hand || hand.street !== 'decision') return;
         const { b } = params();
-        match.stats.you.checks += 1;
+    hand.tempStats.you.checks += 1;
         if (hand.botDecision === 'bet') {
             log('You check.');
             setButtonsDisabled(true);
@@ -587,13 +614,14 @@
                 awaiting: null,
                 startYourStack,
                 startBotStack,
+                tempStats: { you: { reraise:0, checks:0, folds:0, calls:0 }, bot: { reraise:0, checks:0, folds:0, calls:0 } },
 
                 youContrib: ante,
                 botContrib: ante,
             };
             match.yourStack -= ante;
             match.botStack -= ante;
-            if (hand.botDecision === 'bet') match.stats.bot.reraise += 1; else match.stats.bot.checks += 1;
+            if (hand.botDecision === 'bet') hand.tempStats.bot.reraise += 1; else hand.tempStats.bot.checks += 1;
 
 
 
@@ -620,7 +648,7 @@
         if (!hand || hand.street !== 'decision') return;
         const { b } = params();
         log('You chose to fold.');
-        match.stats.you.folds += 1;
+    hand.tempStats.you.folds += 1;
 
         const { P } = params();
         setButtonsDisabled(true);
@@ -635,7 +663,7 @@
 
             log(`Robot chooses to bet ${money(b)}.`);
             hand.pot += b; match.botStack -= b; hand.botContrib += b;
-            match.stats.bot.reraise += 1;
+            hand.tempStats.bot.reraise += 1;
             setButtonsDisabled(false);
             settleWinner('bot', 'Robot bets; you folded. Robot wins by forfeit.');
         }

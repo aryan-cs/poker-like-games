@@ -73,7 +73,8 @@
         <div class="control-group" style="min-width:260px;">
           <p>Welcome to World's Simplest Poker! This is a card game that draws on mechanics from games like Poker and War, where players are dealt a single card. The winner is decided by the higher card value.</p>
           <p>Players begin each round by placing an ante (blind). Then, both are dealt a single card from the deck. Upon seeing their assigned card, they can decided to either Raise, Check, or Fold.</p>
-          <p>If they choose to raise, they must place a bet equal to that of their ante. Should both players choose the same action, the game proceeds to the showdown.</p>
+          <p>Decisions are made simultaneously and independently.</p>
+          <p>If a player chooses to raise, they must place a bet equal to that of their ante. Should both players choose the same action, the game proceeds to the showdown.</p>
           <p>In a showdown, the player with the higher card value wins (for A/K/Q, Ace high). If one player folds, the other automatically wins the round.</p>
           <p>The game continues for multiple rounds, with players accumulating winnings in their stacks. The objective is to maximize your total balance over time.</p>
           <br />
@@ -91,7 +92,7 @@
       <div class="control-group">
         <label for="strategySelect">Robot Strategy</label>
         <select id="strategySelect">
-          <option value="random" selected>Random Guesser</option>
+          <option value="random" selected>Random</option>
           <option value="safe">Safe</option>
           <option value="risky">Risky</option>
           <option value="smart">Smart</option>
@@ -116,8 +117,8 @@
           <label for="deckSelect">Deck Type</label>
           <select id="deckSelect">
             <option value="akq" selected>A / K / Q</option>
-            <option value="6">n = 6</option>
             <option value="10">n = 10</option>
+            <option value="single">Single Suite</option>
             <option value="100">n = 100</option>
           </select>
         </div>
